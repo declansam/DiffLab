@@ -47,14 +47,79 @@ export function buildSideBySideFromLineDiff(parts: DiffPart[]): SideBySideRow[] 
     const rows: SideBySideRow[] = [];
     let leftLine = 1;
     let rightLine = 1;
-
+    
+    // First pass: collect all removed and added sections
+    const processedParts: Array<{type: 'unchanged' | 'removed' | 'added', lines: string[], part: DiffPart}> = [];
+    
     for (const part of parts) {
         const lines = part.value.split("\n");
-        // The last split is empty when value ends with a newline; ignore it for display
         const linesToRender = lines[lines.length - 1] === "" ? lines.slice(0, -1) : lines;
-
+        
         if (part.added) {
-            for (const line of linesToRender) {
+            processedParts.push({type: 'added', lines: linesToRender, part});
+        } else if (part.removed) {
+            processedParts.push({type: 'removed', lines: linesToRender, part});
+        } else {
+            processedParts.push({type: 'unchanged', lines: linesToRender, part});
+        }
+    }
+    
+    // Second pass: pair up removed/added sections and create rows
+    let i = 0;
+    while (i < processedParts.length) {
+        const current = processedParts[i];
+        
+        if (current.type === 'unchanged') {
+            // Unchanged lines - show on both sides
+            for (const line of current.lines) {
+                rows.push({
+                    leftLineNumber: leftLine++,
+                    rightLineNumber: rightLine++,
+                    leftText: line,
+                    rightText: line,
+                    changeType: "unchanged",
+                });
+            }
+            i++;
+        } else if (current.type === 'removed') {
+            // Check if next part is added - if so, pair them up
+            const next = i + 1 < processedParts.length ? processedParts[i + 1] : null;
+            
+            if (next && next.type === 'added') {
+                // Pair removed and added lines
+                const removedLines = current.lines;
+                const addedLines = next.lines;
+                const maxLines = Math.max(removedLines.length, addedLines.length);
+                
+                for (let j = 0; j < maxLines; j++) {
+                    const removedLine = j < removedLines.length ? removedLines[j] : null;
+                    const addedLine = j < addedLines.length ? addedLines[j] : null;
+                    
+                    rows.push({
+                        leftLineNumber: removedLine !== null ? leftLine++ : null,
+                        rightLineNumber: addedLine !== null ? rightLine++ : null,
+                        leftText: removedLine,
+                        rightText: addedLine,
+                        changeType: "modified",
+                    });
+                }
+                i += 2; // Skip both removed and added parts
+            } else {
+                // Only removed lines
+                for (const line of current.lines) {
+                    rows.push({
+                        leftLineNumber: leftLine++,
+                        rightLineNumber: null,
+                        leftText: line,
+                        rightText: null,
+                        changeType: "removed",
+                    });
+                }
+                i++;
+            }
+        } else if (current.type === 'added') {
+            // Only added lines (not paired with removed)
+            for (const line of current.lines) {
                 rows.push({
                     leftLineNumber: null,
                     rightLineNumber: rightLine++,
@@ -63,31 +128,9 @@ export function buildSideBySideFromLineDiff(parts: DiffPart[]): SideBySideRow[] 
                     changeType: "added",
                 });
             }
-            continue;
-        }
-
-        if (part.removed) {
-            for (const line of linesToRender) {
-                rows.push({
-                    leftLineNumber: leftLine++,
-                    rightLineNumber: null,
-                    leftText: line,
-                    rightText: null,
-                    changeType: "removed",
-                });
-            }
-            continue;
-        }
-
-        // Unchanged chunk – align both sides
-        for (const line of linesToRender) {
-            rows.push({
-                leftLineNumber: leftLine++,
-                rightLineNumber: rightLine++,
-                leftText: line,
-                rightText: line,
-                changeType: "unchanged",
-            });
+            i++;
+        } else {
+            i++;
         }
     }
 

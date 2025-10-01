@@ -30,31 +30,36 @@ export default function DiffDisplay({ mode, sideBySideRows, inlineParts, classNa
     if (mode === "side-by-side") {
         return (
             <div className={className}>
-                <div className="grid grid-cols-2 gap-4 w-full text-sm">
-                    <div className="font-medium opacity-80">Left</div>
-                    <div className="font-medium opacity-80">Right</div>
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-2 lg:gap-3 w-full text-xs sm:text-sm">
+                    <div className="font-semibold text-slate-800 pb-2 border-b border-slate-200">Original</div>
+                    <div className="font-semibold text-slate-800 pb-2 border-b border-slate-200 lg:hidden">Modified</div>
+                    <div className="font-semibold text-slate-800 pb-2 border-b border-slate-200 hidden lg:block">Modified</div>
                     {sideBySideRows?.map((row, idx) => {
                         const leftClasses =
                             row.changeType === "removed"
-                                ? "bg-rose-50 dark:bg-rose-900/40 border-l-4 border-rose-500/80"
-                                : row.changeType === "unchanged"
-                                    ? ""
-                                    : "";
+                                ? "bg-red-50 border-l-4 border-red-400 text-red-800"
+                                : row.changeType === "modified" && row.leftText !== null
+                                    ? "bg-red-50 border-l-4 border-red-400 text-red-800"
+                                    : row.changeType === "unchanged"
+                                        ? "text-slate-700"
+                                        : "text-slate-700";
                         const rightClasses =
                             row.changeType === "added"
-                                ? "bg-emerald-50 dark:bg-emerald-900/40 border-l-4 border-emerald-500/80"
-                                : row.changeType === "unchanged"
-                                    ? ""
-                                    : "";
+                                ? "bg-green-50 border-l-4 border-green-400 text-green-800"
+                                : row.changeType === "modified" && row.rightText !== null
+                                    ? "bg-green-50 border-l-4 border-green-400 text-green-800"
+                                    : row.changeType === "unchanged"
+                                        ? "text-slate-700"
+                                        : "text-slate-700";
                         return (
                             <React.Fragment key={idx}>
-                                <div className={`flex gap-3 items-start whitespace-pre-wrap font-mono ${leftClasses}`}>
-                                    <span className="select-none w-10 text-right pr-2 opacity-50">{row.leftLineNumber ?? ""}</span>
-                                    <span className="flex-1">{row.leftText ?? ""}</span>
+                                <div className={`flex gap-2 sm:gap-3 items-start font-mono px-1.5 sm:px-2 rounded-md ${leftClasses}`}>
+                                    <span className="select-none w-8 sm:w-10 text-right pr-1 sm:pr-2 text-slate-500 font-medium text-xs leading-none flex-shrink-0">{row.leftLineNumber ?? ""}</span>
+                                    <span className="flex-1 leading-none text-xs sm:text-sm break-words">{row.leftText ?? ""}</span>
                                 </div>
-                                <div className={`flex gap-3 items-start whitespace-pre-wrap font-mono ${rightClasses}`}>
-                                    <span className="select-none w-10 text-right pr-2 opacity-50">{row.rightLineNumber ?? ""}</span>
-                                    <span className="flex-1">{row.rightText ?? ""}</span>
+                                <div className={`flex gap-2 sm:gap-3 items-start font-mono px-1.5 sm:px-2 rounded-md ${rightClasses}`}>
+                                    <span className="select-none w-8 sm:w-10 text-right pr-1 sm:pr-2 text-slate-500 font-medium text-xs leading-none flex-shrink-0">{row.rightLineNumber ?? ""}</span>
+                                    <span className="flex-1 leading-none text-xs sm:text-sm break-words">{row.rightText ?? ""}</span>
                                 </div>
                             </React.Fragment>
                         );
@@ -68,14 +73,14 @@ export default function DiffDisplay({ mode, sideBySideRows, inlineParts, classNa
     const inline = renderInline(inlineParts ?? []);
     return (
         <div className={className}>
-            <div className="prose prose-sm max-w-none font-mono whitespace-pre-wrap">
+            <div className="font-mono text-xs sm:text-sm leading-none text-slate-800 p-2 sm:p-3 break-words">
                 {inline.map((p, i) => {
                     const cls =
                         p.status === "added"
-                            ? "text-emerald-200 bg-emerald-900/40 underline decoration-emerald-400/60"
+                            ? "text-green-800 bg-green-100 px-1 py-0.5 rounded font-medium"
                             : p.status === "removed"
-                                ? "text-rose-200 bg-rose-900/40 line-through decoration-rose-400/60"
-                                : "";
+                                ? "text-red-800 bg-red-100 px-1 py-0.5 rounded line-through font-medium"
+                                : "text-slate-800";
                     return (
                         <span key={i} className={cls}>
                             {p.text}

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import ThemeToggle from "@/components/ThemeToggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,11 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Diff Checker",
-  description: "Custom difference checker",
+  title: "DiffLab",
+  description: "A simple text diff comparison tool",
   icons: {
     icon: "/favicon.ico",
   },
+  viewport: "width=device-width, initial-scale=1",
 };
 
 export default function RootLayout({
@@ -31,27 +31,24 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* set theme before first paint */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(() => { try { const stored = localStorage.getItem('theme'); const m = window.matchMedia('(prefers-color-scheme: dark)').matches; const t = stored === 'light' || stored === 'dark' ? stored : (m ? 'dark' : 'light'); const r = document.documentElement; if (t === 'dark') r.classList.add('dark'); else r.classList.remove('dark'); } catch (_) {} })();`,
-          }}
-        />
-
-        <div className="w-full border-b border-black/10 dark:border-white/15">
-          <div className="mx-auto max-w-screen-2xl p-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="text-sm font-medium">Diff Checker</div>
-              <a
-                href="https://lcsamyam.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs opacity-80 hover:opacity-100 underline underline-offset-4"
-              >
-                by lcsamyam
-              </a>
+        <div className="w-full border-b border-slate-200 bg-white">
+          <div className="mx-auto max-w-screen-2xl p-3 sm:p-4">
+            <div className="flex flex-col sm:flex-row items-center sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
+                <div className="text-xl sm:text-2xl font-bold text-slate-800">DiffLab</div>
+                <a
+                  href="https://lcsamyam.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-slate-600 hover:text-slate-800 underline underline-offset-4"
+                >
+                  by lcsamyam
+                </a>
+              </div>
+              <div id="diff-controls" className="flex flex-wrap items-center gap-2 sm:gap-4">
+                {/* Controls will be rendered here by DiffChecker */}
+              </div>
             </div>
-            <ThemeToggle />
           </div>
         </div>
         {children}
