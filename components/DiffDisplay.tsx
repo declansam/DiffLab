@@ -55,11 +55,11 @@ export default function DiffDisplay({ mode, sideBySideRows, inlineParts, classNa
                             <React.Fragment key={idx}>
                                 <div className={`flex gap-2 sm:gap-3 items-start font-mono px-1.5 sm:px-2 rounded-md ${leftClasses}`}>
                                     <span className="select-none w-8 sm:w-10 text-right pr-1 sm:pr-2 text-slate-500 font-medium text-xs leading-none flex-shrink-0">{row.leftLineNumber ?? ""}</span>
-                                    <span className="flex-1 leading-none text-xs sm:text-sm break-words">{row.leftText ?? ""}</span>
+                                    <span className="flex-1 leading-none text-xs sm:text-sm whitespace-pre">{row.leftText ?? ""}</span>
                                 </div>
                                 <div className={`flex gap-2 sm:gap-3 items-start font-mono px-1.5 sm:px-2 rounded-md ${rightClasses}`}>
                                     <span className="select-none w-8 sm:w-10 text-right pr-1 sm:pr-2 text-slate-500 font-medium text-xs leading-none flex-shrink-0">{row.rightLineNumber ?? ""}</span>
-                                    <span className="flex-1 leading-none text-xs sm:text-sm break-words">{row.rightText ?? ""}</span>
+                                    <span className="flex-1 leading-none text-xs sm:text-sm whitespace-pre">{row.rightText ?? ""}</span>
                                 </div>
                             </React.Fragment>
                         );
@@ -73,7 +73,7 @@ export default function DiffDisplay({ mode, sideBySideRows, inlineParts, classNa
     const inline = renderInline(inlineParts ?? []);
     return (
         <div className={className}>
-            <div className="font-mono text-xs sm:text-sm leading-none text-slate-800 p-2 sm:p-3 break-words">
+            <div className="font-mono text-xs sm:text-sm leading-none text-slate-800 p-2 sm:p-3 whitespace-pre-wrap">
                 {inline.map((p, i) => {
                     const cls =
                         p.status === "added"
