@@ -2,7 +2,7 @@
 
 import React from "react";
 import DiffDisplay from "@/components/DiffDisplay";
-import { buildSideBySideFromLineDiff, computeLineDiff, computeWordDiff } from "@/lib/diffUtils";
+import { buildSideBySideFromLineDiff, computeLineDiff, computeWordDiff, calculateDiffStats } from "@/lib/diffUtils";
 
 type Mode = "side-by-side" | "inline";
 
@@ -18,9 +18,19 @@ export default function DiffChecker() {
         setRight("");
     }, []);
 
+    const handleFileUpload = React.useCallback((file: File, setter: (value: string) => void) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const content = e.target?.result as string;
+            setter(content);
+        };
+        reader.readAsText(file);
+    }, []);
+
     const lineParts = React.useMemo(() => computeLineDiff(left, right, { ignoreWhitespace }), [left, right, ignoreWhitespace]);
     const sbsRows = React.useMemo(() => buildSideBySideFromLineDiff(lineParts), [lineParts]);
     const inlineParts = React.useMemo(() => computeWordDiff(left, right, { ignoreCase }), [left, right, ignoreCase]);
+    const diffStats = React.useMemo(() => calculateDiffStats(lineParts), [lineParts]);
 
     // Expose clear function globally for DiffLab title click
     React.useEffect(() => {
@@ -95,7 +105,30 @@ export default function DiffChecker() {
         <div className="w-full max-w-none mx-auto flex flex-col gap-4 sm:gap-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <div className="flex flex-col gap-2 sm:gap-3">
-                    <label className="text-sm sm:text-base font-semibold text-slate-800">Original Text</label>
+                    <div className="flex items-center justify-between">
+                        <label className="text-sm sm:text-base font-semibold text-slate-800">Original Text</label>
+                        <div className="flex items-center gap-3">
+                            {diffStats.deletions > 0 && (
+                                <span className="text-xs sm:text-sm text-red-600 font-medium">
+                                    {diffStats.deletions} deletion{diffStats.deletions !== 1 ? 's' : ''}
+                                </span>
+                            )}
+                            <label className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors">
+                                Upload File
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    accept=".txt,.md,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.h,.css,.html,.json,.xml,.yml,.yaml"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            handleFileUpload(file, setLeft);
+                                        }
+                                    }}
+                                />
+                            </label>
+                        </div>
+                    </div>
                     <textarea
             className="min-h-48 sm:min-h-64 h-48 sm:h-64 w-full resize-y rounded-lg border border-slate-300 bg-white p-3 sm:p-4 font-mono text-xs sm:text-sm leading-relaxed text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
                         placeholder="Paste or type your original text here..."
@@ -104,7 +137,37 @@ export default function DiffChecker() {
                     />
                 </div>
                 <div className="flex flex-col gap-2 sm:gap-3">
-                    <label className="text-sm sm:text-base font-semibold text-slate-800">Modified Text</label>
+                    <div className="flex items-center justify-between">
+                        <label className="text-sm sm:text-base font-semibold text-slate-800">Modified Text</label>
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
+                                {diffStats.additions > 0 && (
+                                    <span className="text-xs sm:text-sm text-green-600 font-medium">
+                                        {diffStats.additions} addition{diffStats.additions !== 1 ? 's' : ''}
+                                    </span>
+                                )}
+                                {diffStats.modifications > 0 && (
+                                    <span className="text-xs sm:text-sm text-blue-600 font-medium">
+                                        {diffStats.modifications} modification{diffStats.modifications !== 1 ? 's' : ''}
+                                    </span>
+                                )}
+                            </div>
+                            <label className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors">
+                                Upload File
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    accept=".txt,.md,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.h,.css,.html,.json,.xml,.yml,.yaml"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            handleFileUpload(file, setRight);
+                                        }
+                                    }}
+                                />
+                            </label>
+                        </div>
+                    </div>
                     <textarea
             className="min-h-48 sm:min-h-64 h-48 sm:h-64 w-full resize-y rounded-lg border border-slate-300 bg-white p-3 sm:p-4 font-mono text-xs sm:text-sm leading-relaxed text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
                         placeholder="Paste or type your modified text here..."
