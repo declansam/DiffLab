@@ -30,7 +30,7 @@ export default function DiffDisplay({ mode, sideBySideRows, inlineParts, classNa
     if (mode === "side-by-side") {
         return (
             <div className={className}>
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-2 lg:gap-3 w-full text-xs sm:text-sm">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-6 w-full text-xs">
                     <div className="font-semibold text-slate-800 pb-2 border-b border-slate-200">Original</div>
                     <div className="font-semibold text-slate-800 pb-2 border-b border-slate-200 lg:hidden">Modified</div>
                     <div className="font-semibold text-slate-800 pb-2 border-b border-slate-200 hidden lg:block">Modified</div>
@@ -53,13 +53,13 @@ export default function DiffDisplay({ mode, sideBySideRows, inlineParts, classNa
                                         : "text-slate-700";
                         return (
                             <React.Fragment key={idx}>
-                                <div className={`flex gap-2 sm:gap-3 items-start font-mono px-1.5 sm:px-2 rounded-md ${leftClasses}`}>
-                                    <span className="select-none w-8 sm:w-10 text-right pr-1 sm:pr-2 text-slate-500 font-medium text-xs leading-none flex-shrink-0">{row.leftLineNumber ?? ""}</span>
-                                    <span className="flex-1 leading-none text-xs sm:text-sm whitespace-pre">{row.leftText ?? ""}</span>
+                                <div className={`flex gap-2 sm:gap-3 items-start font-mono px-2 -mb-2 rounded-md ${leftClasses}`}>
+                                    <span className="select-none w-8 text-right pr-2 text-slate-500 font-medium text-xs leading-none flex-shrink-0">{row.leftLineNumber ?? ""}</span>
+                                    <span className="flex-1 leading-none text-xs break-words whitespace-pre-wrap">{row.leftText ?? ""}</span>
                                 </div>
-                                <div className={`flex gap-2 sm:gap-3 items-start font-mono px-1.5 sm:px-2 rounded-md ${rightClasses}`}>
-                                    <span className="select-none w-8 sm:w-10 text-right pr-1 sm:pr-2 text-slate-500 font-medium text-xs leading-none flex-shrink-0">{row.rightLineNumber ?? ""}</span>
-                                    <span className="flex-1 leading-none text-xs sm:text-sm whitespace-pre">{row.rightText ?? ""}</span>
+                                <div className={`flex gap-2 sm:gap-3 items-start font-mono px-2 -mb-2 rounded-md ${rightClasses}`}>
+                                    <span className="select-none w-8 text-right pr-2 text-slate-500 font-medium text-xs leading-none flex-shrink-0">{row.rightLineNumber ?? ""}</span>
+                                    <span className="flex-1 leading-none text-xs break-words whitespace-pre-wrap">{row.rightText ?? ""}</span>
                                 </div>
                             </React.Fragment>
                         );
@@ -73,13 +73,13 @@ export default function DiffDisplay({ mode, sideBySideRows, inlineParts, classNa
     const inline = renderInline(inlineParts ?? []);
     return (
         <div className={className}>
-            <div className="font-mono text-xs sm:text-sm leading-none text-slate-800 p-2 sm:p-3 whitespace-pre-wrap">
+            <div className="font-mono text-xs sm:text-sm leading-tight text-slate-800 p-2 sm:p-3 whitespace-pre-wrap">
                 {inline.map((p, i) => {
                     const cls =
                         p.status === "added"
-                            ? "text-green-800 bg-green-100 px-1 py-0.5 rounded font-medium"
+                            ? "text-green-800 bg-green-100 px-1 py-px rounded font-medium inline-block"
                             : p.status === "removed"
-                                ? "text-red-800 bg-red-100 px-1 py-0.5 rounded line-through font-medium"
+                                ? "text-red-800 bg-red-100 px-1 py-px rounded line-through font-medium inline-block"
                                 : "text-slate-800";
                     return (
                         <span key={i} className={cls}>

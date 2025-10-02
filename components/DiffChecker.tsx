@@ -13,9 +13,22 @@ export default function DiffChecker() {
     const [ignoreWhitespace, setIgnoreWhitespace] = React.useState(true);
     const [ignoreCase, setIgnoreCase] = React.useState(false);
 
+    const clearAll = React.useCallback(() => {
+        setLeft("");
+        setRight("");
+    }, []);
+
     const lineParts = React.useMemo(() => computeLineDiff(left, right, { ignoreWhitespace }), [left, right, ignoreWhitespace]);
     const sbsRows = React.useMemo(() => buildSideBySideFromLineDiff(lineParts), [lineParts]);
     const inlineParts = React.useMemo(() => computeWordDiff(left, right, { ignoreCase }), [left, right, ignoreCase]);
+
+    // Expose clear function globally for DiffLab title click
+    React.useEffect(() => {
+        (window as Window & { clearDiffLab?: () => void }).clearDiffLab = clearAll;
+        return () => {
+            delete (window as Window & { clearDiffLab?: () => void }).clearDiffLab;
+        };
+    }, [clearAll]);
 
     // Render controls to navbar
     React.useEffect(() => {
@@ -47,7 +60,7 @@ export default function DiffChecker() {
                 <label class="text-xs sm:text-sm font-medium text-slate-700">Whitespace:</label>
                 <select class="bg-white border border-slate-300 rounded px-2 py-1 text-xs sm:text-sm font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
                     <option value="on" ${ignoreWhitespace ? 'selected' : ''}>Ignore</option>
-                    <option value="off" ${!ignoreWhitespace ? 'selected' : ''}>Respect</option>
+                    <option value="off" ${!ignoreWhitespace ? 'selected' : ''}>Sensitive</option>
                 </select>
             `;
             whitespaceDiv.querySelector('select')?.addEventListener('change', (e) => setIgnoreWhitespace((e.target as HTMLSelectElement).value === 'on'));
@@ -64,15 +77,22 @@ export default function DiffChecker() {
             `;
             caseDiv.querySelector('select')?.addEventListener('change', (e) => setIgnoreCase((e.target as HTMLSelectElement).value === 'on'));
             
+            // Clear button
+            const clearButton = document.createElement('button');
+            clearButton.className = 'bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs sm:text-sm font-medium transition-colors focus:outline-none focus:ring-1 focus:ring-red-500';
+            clearButton.textContent = 'Clear';
+            clearButton.addEventListener('click', clearAll);
+            
             wrapper.appendChild(viewDiv);
             wrapper.appendChild(whitespaceDiv);
             wrapper.appendChild(caseDiv);
+            wrapper.appendChild(clearButton);
             controlsContainer.appendChild(wrapper);
         }
-    }, [mode, ignoreWhitespace, ignoreCase]);
+    }, [mode, ignoreWhitespace, ignoreCase, clearAll]);
 
     return (
-        <div className="w-full max-w-none xl:max-w-screen-2xl mx-auto flex flex-col gap-4 sm:gap-6 p-3 sm:p-6">
+        <div className="w-full max-w-none mx-auto flex flex-col gap-4 sm:gap-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <div className="flex flex-col gap-2 sm:gap-3">
                     <label className="text-sm sm:text-base font-semibold text-slate-800">Original Text</label>

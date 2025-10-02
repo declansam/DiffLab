@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Header from "@/components/Header";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -110,31 +111,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="w-full border-b border-slate-200 bg-white">
-          <div className="mx-auto max-w-screen-2xl p-3 sm:p-4">
-            <div className="flex flex-col sm:flex-row items-center sm:items-center justify-between gap-3 sm:gap-4">
-              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
-                <div className="text-xl sm:text-2xl font-bold text-slate-800">
-                  DiffLab
-                </div>
-                <a
-                  href="https://lcsamyam.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-slate-600 hover:text-slate-800 underline underline-offset-4"
-                >
-                  by lcsamyam
-                </a>
-              </div>
-              <div
-                id="diff-controls"
-                className="flex flex-wrap items-center gap-2 sm:gap-4"
-              >
-                {/* Controls will be rendered here by DiffChecker */}
-              </div>
-            </div>
-          </div>
-        </div>
+        <Header />
         {children}
       </body>
     </html>
