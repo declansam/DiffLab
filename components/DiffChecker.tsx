@@ -3,6 +3,7 @@
 import React from "react";
 import DiffDisplay from "@/components/DiffDisplay";
 import { buildSideBySideFromLineDiff, computeLineDiff, computeWordDiff, calculateDiffStats } from "@/lib/diffUtils";
+import { ArrowUp } from "lucide-react";
 
 type Mode = "side-by-side" | "inline";
 
@@ -12,10 +13,15 @@ export default function DiffChecker() {
     const [mode, setMode] = React.useState<Mode>("side-by-side");
     const [ignoreWhitespace, setIgnoreWhitespace] = React.useState(true);
     const [ignoreCase, setIgnoreCase] = React.useState(false);
+    const [showScrollTop, setShowScrollTop] = React.useState(false);
 
     const clearAll = React.useCallback(() => {
         setLeft("");
         setRight("");
+    }, []);
+
+    const scrollToTop = React.useCallback(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
     }, []);
 
     const handleFileUpload = React.useCallback((file: File, setter: (value: string) => void) => {
@@ -39,6 +45,15 @@ export default function DiffChecker() {
             delete (window as Window & { clearDiffLab?: () => void }).clearDiffLab;
         };
     }, [clearAll]);
+
+    // Handle scroll to show/hide scroll-to-top button
+    React.useEffect(() => {
+        const handleScroll = () => {
+            setShowScrollTop(window.scrollY > 400);
+        };
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
 
     // Render controls to navbar
     React.useEffect(() => {
@@ -102,6 +117,7 @@ export default function DiffChecker() {
     }, [mode, ignoreWhitespace, ignoreCase, clearAll]);
 
     return (
+        <>
         <div className="w-full max-w-none mx-auto flex flex-col gap-4 sm:gap-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <div className="flex flex-col gap-2 sm:gap-3">
@@ -185,6 +201,18 @@ export default function DiffChecker() {
                 )}
             </div>
         </div>
+        
+        {/* Scroll to Top Button */}
+        {showScrollTop && (
+            <button
+                onClick={scrollToTop}
+                className="fixed bottom-8 right-8 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 z-40"
+                aria-label="Scroll to top"
+            >
+                <ArrowUp className="w-6 h-6" />
+            </button>
+        )}
+        </>
     );
 }
 

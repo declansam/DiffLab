@@ -2,7 +2,7 @@
 
 export default function Header() {
     return (
-        <div className="w-full border-b border-slate-200 bg-white">
+        <div className="w-full border-b border-slate-200 bg-white sticky top-0 z-50 shadow-sm">
             <div className="mx-auto p-3 sm:p-6">
                 <div className="flex flex-col sm:flex-row items-center sm:items-center justify-between gap-3 sm:gap-4">
                     <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
