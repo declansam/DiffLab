@@ -2,6 +2,7 @@
 
 import React from "react";
 import DiffDisplay from "@/components/DiffDisplay";
+import DiffMinimap from "@/components/DiffMinimap";
 import { buildSideBySideFromLineDiff, computeLineDiff, computeWordDiff, calculateDiffStats } from "@/lib/diffUtils";
 import { ArrowUp } from "lucide-react";
 
@@ -14,6 +15,7 @@ export default function DiffChecker() {
     const [ignoreWhitespace, setIgnoreWhitespace] = React.useState(true);
     const [ignoreCase, setIgnoreCase] = React.useState(false);
     const [showScrollTop, setShowScrollTop] = React.useState(false);
+    const diffContainerRef = React.useRef<HTMLDivElement>(null);
 
     const clearAll = React.useCallback(() => {
         setLeft("");
@@ -193,7 +195,7 @@ export default function DiffChecker() {
                 </div>
             </div>
 
-            <div className="mt-4">
+            <div className="mt-4" ref={diffContainerRef}>
                 {mode === "side-by-side" ? (
                     <DiffDisplay mode="side-by-side" sideBySideRows={sbsRows} className="border border-slate-300 rounded-lg p-2 sm:p-4 bg-white shadow-sm overflow-x-auto" />
                 ) : (
@@ -201,6 +203,11 @@ export default function DiffChecker() {
                 )}
             </div>
         </div>
+        
+        {/* Minimap */}
+        {mode === "side-by-side" && sbsRows.length > 0 && (
+            <DiffMinimap sideBySideRows={sbsRows} containerRef={diffContainerRef} />
+        )}
         
         {/* Scroll to Top Button */}
         {showScrollTop && (
