@@ -63,11 +63,11 @@ export default function DiffChecker() {
         if (controlsContainer) {
             // Clear existing controls
             controlsContainer.innerHTML = '';
-            
+
             // Create controls wrapper
             const wrapper = document.createElement('div');
             wrapper.className = 'flex flex-wrap items-center gap-2 sm:gap-4';
-            
+
             // View control
             const viewDiv = document.createElement('div');
             viewDiv.className = 'flex items-center gap-1 sm:gap-2';
@@ -79,7 +79,7 @@ export default function DiffChecker() {
                 </select>
             `;
             viewDiv.querySelector('select')?.addEventListener('change', (e) => setMode((e.target as HTMLSelectElement).value as Mode));
-            
+
             // Whitespace control
             const whitespaceDiv = document.createElement('div');
             whitespaceDiv.className = 'flex items-center gap-1 sm:gap-2';
@@ -91,7 +91,7 @@ export default function DiffChecker() {
                 </select>
             `;
             whitespaceDiv.querySelector('select')?.addEventListener('change', (e) => setIgnoreWhitespace((e.target as HTMLSelectElement).value === 'on'));
-            
+
             // Case control
             const caseDiv = document.createElement('div');
             caseDiv.className = 'flex items-center gap-1 sm:gap-2';
@@ -103,13 +103,20 @@ export default function DiffChecker() {
                 </select>
             `;
             caseDiv.querySelector('select')?.addEventListener('change', (e) => setIgnoreCase((e.target as HTMLSelectElement).value === 'on'));
-            
+
             // Clear button
             const clearButton = document.createElement('button');
             clearButton.className = 'bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs sm:text-sm font-medium transition-colors focus:outline-none focus:ring-1 focus:ring-red-500';
             clearButton.textContent = 'Clear';
             clearButton.addEventListener('click', clearAll);
-            
+
+            // Privacy Policy link
+            const privacyLink = document.createElement('a');
+            privacyLink.href = '/privacy-policy';
+            privacyLink.className = 'text-sm text-slate-600 hover:text-slate-800 underline underline-offset-4 transition-colors';
+            privacyLink.textContent = 'Privacy Policy';
+
+            wrapper.appendChild(privacyLink);
             wrapper.appendChild(viewDiv);
             wrapper.appendChild(whitespaceDiv);
             wrapper.appendChild(caseDiv);
@@ -120,105 +127,105 @@ export default function DiffChecker() {
 
     return (
         <>
-        <div className="w-full max-w-none mx-auto flex flex-col gap-4 sm:gap-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                <div className="flex flex-col gap-2 sm:gap-3">
-                    <div className="flex items-center justify-between">
-                        <label className="text-sm sm:text-base font-semibold text-slate-800">Original Text</label>
-                        <div className="flex items-center gap-3">
-                            {diffStats.deletions > 0 && (
-                                <span className="text-xs sm:text-sm text-red-600 font-medium">
-                                    {diffStats.deletions} deletion{diffStats.deletions !== 1 ? 's' : ''}
-                                </span>
-                            )}
-                            <label className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors">
-                                Upload File
-                                <input
-                                    type="file"
-                                    className="hidden"
-                                    accept=".txt,.md,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.h,.css,.html,.json,.xml,.yml,.yaml"
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                            handleFileUpload(file, setLeft);
-                                        }
-                                    }}
-                                />
-                            </label>
-                        </div>
-                    </div>
-                    <textarea
-            className="min-h-48 sm:min-h-64 h-48 sm:h-64 w-full resize-y rounded-lg border border-slate-300 bg-white p-3 sm:p-4 font-mono text-xs sm:text-sm leading-relaxed text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                        placeholder="Paste or type your original text here..."
-                        value={left}
-                        onChange={(e) => setLeft(e.target.value)}
-                    />
-                </div>
-                <div className="flex flex-col gap-2 sm:gap-3">
-                    <div className="flex items-center justify-between">
-                        <label className="text-sm sm:text-base font-semibold text-slate-800">Modified Text</label>
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-2">
-                                {diffStats.additions > 0 && (
-                                    <span className="text-xs sm:text-sm text-green-600 font-medium">
-                                        {diffStats.additions} addition{diffStats.additions !== 1 ? 's' : ''}
+            <div className="w-full max-w-none mx-auto flex flex-col gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                    <div className="flex flex-col gap-2 sm:gap-3">
+                        <div className="flex items-center justify-between">
+                            <label className="text-sm sm:text-base font-semibold text-slate-800">Original Text</label>
+                            <div className="flex items-center gap-3">
+                                {diffStats.deletions > 0 && (
+                                    <span className="text-xs sm:text-sm text-red-600 font-medium">
+                                        {diffStats.deletions} deletion{diffStats.deletions !== 1 ? 's' : ''}
                                     </span>
                                 )}
-                                {diffStats.modifications > 0 && (
-                                    <span className="text-xs sm:text-sm text-blue-600 font-medium">
-                                        {diffStats.modifications} modification{diffStats.modifications !== 1 ? 's' : ''}
-                                    </span>
-                                )}
+                                <label className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors">
+                                    Upload File
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept=".txt,.md,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.h,.css,.html,.json,.xml,.yml,.yaml"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                handleFileUpload(file, setLeft);
+                                            }
+                                        }}
+                                    />
+                                </label>
                             </div>
-                            <label className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors">
-                                Upload File
-                                <input
-                                    type="file"
-                                    className="hidden"
-                                    accept=".txt,.md,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.h,.css,.html,.json,.xml,.yml,.yaml"
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                            handleFileUpload(file, setRight);
-                                        }
-                                    }}
-                                />
-                            </label>
                         </div>
+                        <textarea
+                            className="min-h-48 sm:min-h-64 h-48 sm:h-64 w-full resize-y rounded-lg border border-slate-300 bg-white p-3 sm:p-4 font-mono text-xs sm:text-sm leading-relaxed text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                            placeholder="Paste or type your original text here..."
+                            value={left}
+                            onChange={(e) => setLeft(e.target.value)}
+                        />
                     </div>
-                    <textarea
-            className="min-h-48 sm:min-h-64 h-48 sm:h-64 w-full resize-y rounded-lg border border-slate-300 bg-white p-3 sm:p-4 font-mono text-xs sm:text-sm leading-relaxed text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                        placeholder="Paste or type your modified text here..."
-                        value={right}
-                        onChange={(e) => setRight(e.target.value)}
-                    />
+                    <div className="flex flex-col gap-2 sm:gap-3">
+                        <div className="flex items-center justify-between">
+                            <label className="text-sm sm:text-base font-semibold text-slate-800">Modified Text</label>
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
+                                    {diffStats.additions > 0 && (
+                                        <span className="text-xs sm:text-sm text-green-600 font-medium">
+                                            {diffStats.additions} addition{diffStats.additions !== 1 ? 's' : ''}
+                                        </span>
+                                    )}
+                                    {diffStats.modifications > 0 && (
+                                        <span className="text-xs sm:text-sm text-blue-600 font-medium">
+                                            {diffStats.modifications} modification{diffStats.modifications !== 1 ? 's' : ''}
+                                        </span>
+                                    )}
+                                </div>
+                                <label className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors">
+                                    Upload File
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept=".txt,.md,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.h,.css,.html,.json,.xml,.yml,.yaml"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                handleFileUpload(file, setRight);
+                                            }
+                                        }}
+                                    />
+                                </label>
+                            </div>
+                        </div>
+                        <textarea
+                            className="min-h-48 sm:min-h-64 h-48 sm:h-64 w-full resize-y rounded-lg border border-slate-300 bg-white p-3 sm:p-4 font-mono text-xs sm:text-sm leading-relaxed text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                            placeholder="Paste or type your modified text here..."
+                            value={right}
+                            onChange={(e) => setRight(e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                <div className="mt-4" ref={diffContainerRef}>
+                    {mode === "side-by-side" ? (
+                        <DiffDisplay mode="side-by-side" sideBySideRows={sbsRows} className="border border-slate-300 rounded-lg p-2 sm:p-4 bg-white shadow-sm overflow-x-auto" />
+                    ) : (
+                        <DiffDisplay mode="inline" inlineParts={inlineParts} className="border border-slate-300 rounded-lg p-2 sm:p-4 bg-white shadow-sm" />
+                    )}
                 </div>
             </div>
 
-            <div className="mt-4" ref={diffContainerRef}>
-                {mode === "side-by-side" ? (
-                    <DiffDisplay mode="side-by-side" sideBySideRows={sbsRows} className="border border-slate-300 rounded-lg p-2 sm:p-4 bg-white shadow-sm overflow-x-auto" />
-                ) : (
-                    <DiffDisplay mode="inline" inlineParts={inlineParts} className="border border-slate-300 rounded-lg p-2 sm:p-4 bg-white shadow-sm" />
-                )}
-            </div>
-        </div>
-        
-        {/* Minimap */}
-        {mode === "side-by-side" && sbsRows.length > 0 && (
-            <DiffMinimap sideBySideRows={sbsRows} containerRef={diffContainerRef} />
-        )}
-        
-        {/* Scroll to Top Button */}
-        {showScrollTop && (
-            <button
-                onClick={scrollToTop}
-                className="fixed bottom-8 right-8 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 z-40"
-                aria-label="Scroll to top"
-            >
-                <ArrowUp className="w-6 h-6" />
-            </button>
-        )}
+            {/* Minimap */}
+            {mode === "side-by-side" && sbsRows.length > 0 && (
+                <DiffMinimap sideBySideRows={sbsRows} containerRef={diffContainerRef} />
+            )}
+
+            {/* Scroll to Top Button */}
+            {showScrollTop && (
+                <button
+                    onClick={scrollToTop}
+                    className="fixed bottom-8 right-8 bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 z-40"
+                    aria-label="Scroll to top"
+                >
+                    <ArrowUp className="w-6 h-6" />
+                </button>
+            )}
         </>
     );
 }

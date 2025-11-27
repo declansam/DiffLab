@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 export default function Header() {
     return (
@@ -6,7 +7,8 @@ export default function Header() {
             <div className="mx-auto p-3 sm:p-6">
                 <div className="flex flex-col sm:flex-row items-center sm:items-center justify-between gap-3 sm:gap-4">
                     <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
-                        <button
+                        <Link
+                            href="/"
                             className="text-xl sm:text-2xl font-bold text-slate-800 hover:text-slate-600 transition-colors cursor-pointer"
                             onClick={() => {
                                 const clearFn = (
@@ -16,7 +18,7 @@ export default function Header() {
                             }}
                         >
                             DiffLab
-                        </button>
+                        </Link>
                         <a
                             href="https://lcsamyam.com"
                             target="_blank"
