@@ -4,7 +4,7 @@ import React from "react";
 import DiffDisplay from "@/components/DiffDisplay";
 import DiffMinimap from "@/components/DiffMinimap";
 import { buildSideBySideFromLineDiff, computeLineDiff, computeWordDiff, calculateDiffStats } from "@/lib/diffUtils";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, ArrowLeftRight } from "lucide-react";
 
 type Mode = "side-by-side" | "inline";
 
@@ -21,6 +21,12 @@ export default function DiffChecker() {
         setLeft("");
         setRight("");
     }, []);
+
+    const swapTexts = React.useCallback(() => {
+        const temp = left;
+        setLeft(right);
+        setRight(temp);
+    }, [left, right]);
 
     const scrollToTop = React.useCallback(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -128,7 +134,7 @@ export default function DiffChecker() {
     return (
         <>
             <div className="w-full max-w-none mx-auto flex flex-col gap-4 sm:gap-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     <div className="flex flex-col gap-2 sm:gap-3">
                         <div className="flex items-center justify-between">
                             <label className="text-sm sm:text-base font-semibold text-slate-800">Original Text</label>
@@ -161,6 +167,19 @@ export default function DiffChecker() {
                             onChange={(e) => setLeft(e.target.value)}
                         />
                     </div>
+
+                    {/* Swap Button */}
+                    <div className="flex lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 lg:z-10 justify-center lg:justify-start">
+                        <button
+                            onClick={swapTexts}
+                            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            aria-label="Swap texts"
+                            title="Swap original and modified text"
+                        >
+                            <ArrowLeftRight className="w-5 h-5" />
+                        </button>
+                    </div>
+
                     <div className="flex flex-col gap-2 sm:gap-3">
                         <div className="flex items-center justify-between">
                             <label className="text-sm sm:text-base font-semibold text-slate-800">Modified Text</label>
