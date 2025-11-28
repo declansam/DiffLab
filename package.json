@@ -10,8 +10,10 @@
   },
   "dependencies": {
     "diff": "^8.0.2",
+    "js-yaml": "^4.1.1",
     "lucide-react": "^0.546.0",
     "next": "15.5.4",
+    "prettier": "^3.2.5",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },
@@ -19,6 +21,7 @@
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@types/diff": "^7.0.2",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
