@@ -4,8 +4,9 @@ import React from "react";
 import DiffDisplay from "@/components/DiffDisplay";
 import DiffMinimap from "@/components/DiffMinimap";
 import { buildSideBySideFromLineDiff, computeLineDiff, computeWordDiff, calculateDiffStats } from "@/lib/diffUtils";
-import { ArrowUp, ArrowLeftRight, Wand2, Files, X } from "lucide-react";
+import { ArrowUp, ArrowLeftRight, Wand2, Files, X, Share2, Check } from "lucide-react";
 import { detectLanguage, formatCode, getLanguageDisplayName, getSupportedLanguages, type Language } from "@/lib/formatUtils";
+import LZString from "lz-string";
 
 type Mode = "side-by-side" | "inline";
 
@@ -28,6 +29,7 @@ export default function DiffChecker() {
     const [rightFilename, setRightFilename] = React.useState<string>("");
     const [isDraggingLeft, setIsDraggingLeft] = React.useState(false);
     const [isDraggingRight, setIsDraggingRight] = React.useState(false);
+    const [showCopySuccess, setShowCopySuccess] = React.useState(false);
     const diffContainerRef = React.useRef<HTMLDivElement>(null);
 
     const clearAll = React.useCallback(() => {
@@ -167,6 +169,51 @@ export default function DiffChecker() {
         setRightFilename("");
     }, []);
 
+    const generateShareLink = React.useCallback(async () => {
+        try {
+            const data = JSON.stringify({ left, right });
+            const compressed = LZString.compressToEncodedURIComponent(data);
+            
+            const url = `${window.location.origin}${window.location.pathname}?share=${compressed}`;
+            
+            if (url.length > 8000) {
+                alert('The content is too large to share via URL. Try sharing smaller text or use the file upload feature to compare locally.');
+                return;
+            }
+            
+            await navigator.clipboard.writeText(url);
+            setShowCopySuccess(true);
+            setTimeout(() => setShowCopySuccess(false), 2000);
+        } catch (error) {
+            console.error('Failed to copy link:', error);
+            alert('Failed to create share link. Please try again.');
+        }
+    }, [left, right]);
+
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const shareParam = params.get('share');
+            
+            if (shareParam) {
+                try {
+                    const decompressed = LZString.decompressFromEncodedURIComponent(shareParam);
+                    if (decompressed) {
+                        const data = JSON.parse(decompressed);
+                        setLeft(data.left || '');
+                        setRight(data.right || '');
+                        window.history.replaceState({}, '', window.location.pathname);
+                    } else {
+                        alert('Failed to load the shared comparison. The link may be corrupted.');
+                    }
+                } catch (error) {
+                    console.error('Failed to load shared diff:', error);
+                    alert('Failed to load the shared comparison. The link may be invalid.');
+                }
+            }
+        }
+    }, []);
+
     const lineParts = React.useMemo(() => computeLineDiff(left, right, { ignoreWhitespace }), [left, right, ignoreWhitespace]);
     const sbsRows = React.useMemo(() => buildSideBySideFromLineDiff(lineParts), [lineParts]);
     const inlineParts = React.useMemo(() => computeWordDiff(left, right, { ignoreCase }), [left, right, ignoreCase]);
@@ -285,8 +332,8 @@ export default function DiffChecker() {
     return (
         <>
             <div className="w-full max-w-none mx-auto flex flex-col gap-4 sm:gap-6">
-                {/* Compare Two Files Button */}
-                <div className="flex justify-center">
+                {/* Action Buttons */}
+                <div className="flex justify-center items-center gap-3 flex-wrap">
                     <label className="cursor-pointer bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-md">
                         <Files className="w-4 h-4" />
                         Compare Two Files
@@ -298,6 +345,25 @@ export default function DiffChecker() {
                             onChange={handleCompareTwoFiles}
                         />
                     </label>
+                    
+                    <button
+                        onClick={generateShareLink}
+                        disabled={!left && !right}
+                        className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-md"
+                        title="Copy shareable link to clipboard"
+                    >
+                        {showCopySuccess ? (
+                            <>
+                                <Check className="w-4 h-4" />
+                                Link Copied!
+                            </>
+                        ) : (
+                            <>
+                                <Share2 className="w-4 h-4" />
+                                Share Link
+                            </>
+                        )}
+                    </button>
                 </div>
 
                 <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
