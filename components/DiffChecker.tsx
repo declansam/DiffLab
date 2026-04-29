@@ -4,10 +4,13 @@ import React from "react";
 import DiffDisplay from "@/components/DiffDisplay";
 import DiffMinimap from "@/components/DiffMinimap";
 import { buildSideBySideFromLineDiff, computeLineDiff, computeWordDiff, calculateDiffStats } from "@/lib/diffUtils";
-import { ArrowUp, ArrowLeftRight, Wand2 } from "lucide-react";
+import { ArrowUp, ArrowLeftRight, Wand2, Files, X, Share2, Check } from "lucide-react";
 import { detectLanguage, formatCode, getLanguageDisplayName, getSupportedLanguages, type Language } from "@/lib/formatUtils";
+import LZString from "lz-string";
 
 type Mode = "side-by-side" | "inline";
+
+const ACCEPTED_FILE_TYPES = ".txt,.md,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.h,.hpp,.cs,.php,.rb,.go,.rs,.kt,.swift,.scala,.sh,.bash,.zsh,.css,.scss,.sass,.less,.html,.xml,.json,.yaml,.yml,.toml,.ini,.cfg,.conf,.log,.sql,.r,.m,.mat,.v,.vhd,.vhdl,.sv,.svh,.asm,.s,.pl,.pm,.lua,.vim,.el,.clj,.ex,.exs,.erl,.hrl,.fs,.fsx,.ml,.mli,.hs,.lhs,.dart,.groovy,.gradle,.proto,.thrift";
 
 export default function DiffChecker() {
     const [left, setLeft] = React.useState("");
@@ -22,11 +25,18 @@ export default function DiffChecker() {
     const [detectedRightLang, setDetectedRightLang] = React.useState<Language>("text");
     const [isFormattingLeft, setIsFormattingLeft] = React.useState(false);
     const [isFormattingRight, setIsFormattingRight] = React.useState(false);
+    const [leftFilename, setLeftFilename] = React.useState<string>("");
+    const [rightFilename, setRightFilename] = React.useState<string>("");
+    const [isDraggingLeft, setIsDraggingLeft] = React.useState(false);
+    const [isDraggingRight, setIsDraggingRight] = React.useState(false);
+    const [showCopySuccess, setShowCopySuccess] = React.useState(false);
     const diffContainerRef = React.useRef<HTMLDivElement>(null);
 
     const clearAll = React.useCallback(() => {
         setLeft("");
         setRight("");
+        setLeftFilename("");
+        setRightFilename("");
     }, []);
 
     const swapTexts = React.useCallback(() => {
@@ -40,7 +50,11 @@ export default function DiffChecker() {
         const tempDetected = detectedLeftLang;
         setDetectedLeftLang(detectedRightLang);
         setDetectedRightLang(tempDetected);
-    }, [left, right, leftLanguage, rightLanguage, detectedLeftLang, detectedRightLang]);
+        // Swap filenames
+        const tempFilename = leftFilename;
+        setLeftFilename(rightFilename);
+        setRightFilename(tempFilename);
+    }, [left, right, leftLanguage, rightLanguage, detectedLeftLang, detectedRightLang, leftFilename, rightFilename]);
 
     const handleFormatLeft = React.useCallback(async () => {
         if (!left.trim()) return;
@@ -82,13 +96,122 @@ export default function DiffChecker() {
         window.scrollTo({ top: 0, behavior: "smooth" });
     }, []);
 
-    const handleFileUpload = React.useCallback((file: File, setter: (value: string) => void) => {
+    const handleFileUpload = React.useCallback((file: File, setter: (value: string) => void, filenameSetter: (value: string) => void) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             const content = e.target?.result as string;
             setter(content);
+            filenameSetter(file.name);
+        };
+        reader.onerror = () => {
+            alert(`Failed to read file: ${file.name}`);
         };
         reader.readAsText(file);
+    }, []);
+
+    const handleDragOver = React.useCallback((e: React.DragEvent, side: 'left' | 'right') => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (side === 'left') {
+            setIsDraggingLeft(true);
+        } else {
+            setIsDraggingRight(true);
+        }
+    }, []);
+
+    const handleDragLeave = React.useCallback((e: React.DragEvent, side: 'left' | 'right') => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (side === 'left') {
+            setIsDraggingLeft(false);
+        } else {
+            setIsDraggingRight(false);
+        }
+    }, []);
+
+    const handleDrop = React.useCallback((e: React.DragEvent, side: 'left' | 'right') => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (side === 'left') {
+            setIsDraggingLeft(false);
+        } else {
+            setIsDraggingRight(false);
+        }
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            if (side === 'left') {
+                handleFileUpload(file, setLeft, setLeftFilename);
+            } else {
+                handleFileUpload(file, setRight, setRightFilename);
+            }
+        }
+    }, [handleFileUpload]);
+
+    const handleCompareTwoFiles = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (files && files.length >= 2) {
+            handleFileUpload(files[0], setLeft, setLeftFilename);
+            handleFileUpload(files[1], setRight, setRightFilename);
+        } else if (files && files.length === 1) {
+            handleFileUpload(files[0], setLeft, setLeftFilename);
+        }
+    }, [handleFileUpload]);
+
+    const clearLeftFile = React.useCallback(() => {
+        setLeft("");
+        setLeftFilename("");
+    }, []);
+
+    const clearRightFile = React.useCallback(() => {
+        setRight("");
+        setRightFilename("");
+    }, []);
+
+    const generateShareLink = React.useCallback(async () => {
+        try {
+            const data = JSON.stringify({ left, right });
+            const compressed = LZString.compressToEncodedURIComponent(data);
+            
+            const url = `${window.location.origin}${window.location.pathname}?share=${compressed}`;
+            
+            if (url.length > 8000) {
+                alert('The content is too large to share via URL. Try sharing smaller text or use the file upload feature to compare locally.');
+                return;
+            }
+            
+            await navigator.clipboard.writeText(url);
+            setShowCopySuccess(true);
+            setTimeout(() => setShowCopySuccess(false), 2000);
+        } catch (error) {
+            console.error('Failed to copy link:', error);
+            alert('Failed to create share link. Please try again.');
+        }
+    }, [left, right]);
+
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const shareParam = params.get('share');
+            
+            if (shareParam) {
+                try {
+                    const decompressed = LZString.decompressFromEncodedURIComponent(shareParam);
+                    if (decompressed) {
+                        const data = JSON.parse(decompressed);
+                        setLeft(data.left || '');
+                        setRight(data.right || '');
+                        window.history.replaceState({}, '', window.location.pathname);
+                    } else {
+                        alert('Failed to load the shared comparison. The link may be corrupted.');
+                    }
+                } catch (error) {
+                    console.error('Failed to load shared diff:', error);
+                    alert('Failed to load the shared comparison. The link may be invalid.');
+                }
+            }
+        }
     }, []);
 
     const lineParts = React.useMemo(() => computeLineDiff(left, right, { ignoreWhitespace }), [left, right, ignoreWhitespace]);
@@ -209,6 +332,40 @@ export default function DiffChecker() {
     return (
         <>
             <div className="w-full max-w-none mx-auto flex flex-col gap-4 sm:gap-6">
+                {/* Action Buttons */}
+                <div className="flex justify-center items-center gap-3 flex-wrap">
+                    <label className="cursor-pointer bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-md">
+                        <Files className="w-4 h-4" />
+                        Compare Two Files
+                        <input
+                            type="file"
+                            className="hidden"
+                            accept={ACCEPTED_FILE_TYPES}
+                            multiple
+                            onChange={handleCompareTwoFiles}
+                        />
+                    </label>
+                    
+                    <button
+                        onClick={generateShareLink}
+                        disabled={!left && !right}
+                        className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-md"
+                        title="Copy shareable link to clipboard"
+                    >
+                        {showCopySuccess ? (
+                            <>
+                                <Check className="w-4 h-4" />
+                                Link Copied!
+                            </>
+                        ) : (
+                            <>
+                                <Share2 className="w-4 h-4" />
+                                Share Link
+                            </>
+                        )}
+                    </button>
+                </div>
+
                 <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     <div className="flex flex-col gap-2 sm:gap-3">
                         <div className="flex items-center justify-between flex-wrap gap-2">
@@ -246,23 +403,51 @@ export default function DiffChecker() {
                                     <input
                                         type="file"
                                         className="hidden"
-                                        accept=".txt,.md,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.h,.css,.html,.json,.xml,.yml,.yaml"
+                                        accept={ACCEPTED_FILE_TYPES}
                                         onChange={(e) => {
                                             const file = e.target.files?.[0];
                                             if (file) {
-                                                handleFileUpload(file, setLeft);
+                                                handleFileUpload(file, setLeft, setLeftFilename);
                                             }
                                         }}
                                     />
                                 </label>
                             </div>
                         </div>
-                        <textarea
-                            className="min-h-48 sm:min-h-64 h-48 sm:h-64 w-full resize-y rounded-lg border border-slate-300 bg-white p-3 sm:p-4 font-mono text-xs sm:text-sm leading-relaxed text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                            placeholder="Paste or type your original text here..."
-                            value={left}
-                            onChange={(e) => setLeft(e.target.value)}
-                        />
+                        
+                        {leftFilename && (
+                            <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded px-3 py-2">
+                                <span className="text-xs text-blue-700 font-medium truncate flex-1">
+                                    {leftFilename}
+                                </span>
+                                <button
+                                    onClick={clearLeftFile}
+                                    className="text-blue-600 hover:text-blue-800 transition-colors"
+                                    title="Clear file"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        )}
+
+                        <div
+                            className="relative"
+                            onDragOver={(e) => handleDragOver(e, 'left')}
+                            onDragLeave={(e) => handleDragLeave(e, 'left')}
+                            onDrop={(e) => handleDrop(e, 'left')}
+                        >
+                            <textarea
+                                className="min-h-48 sm:min-h-64 h-48 sm:h-64 w-full resize-y rounded-lg border border-slate-300 bg-white p-3 sm:p-4 font-mono text-xs sm:text-sm leading-relaxed text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                                placeholder="Paste or type your original text here, or drag & drop a file..."
+                                value={left}
+                                onChange={(e) => setLeft(e.target.value)}
+                            />
+                            {isDraggingLeft && (
+                                <div className="absolute inset-0 bg-blue-100 bg-opacity-90 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center pointer-events-none">
+                                    <div className="text-blue-600 font-semibold text-lg">Drop file here</div>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Swap Button */}
@@ -320,23 +505,51 @@ export default function DiffChecker() {
                                     <input
                                         type="file"
                                         className="hidden"
-                                        accept=".txt,.md,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.h,.css,.html,.json,.xml,.yml,.yaml"
+                                        accept={ACCEPTED_FILE_TYPES}
                                         onChange={(e) => {
                                             const file = e.target.files?.[0];
                                             if (file) {
-                                                handleFileUpload(file, setRight);
+                                                handleFileUpload(file, setRight, setRightFilename);
                                             }
                                         }}
                                     />
                                 </label>
                             </div>
                         </div>
-                        <textarea
-                            className="min-h-48 sm:min-h-64 h-48 sm:h-64 w-full resize-y rounded-lg border border-slate-300 bg-white p-3 sm:p-4 font-mono text-xs sm:text-sm leading-relaxed text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-                            placeholder="Paste or type your modified text here..."
-                            value={right}
-                            onChange={(e) => setRight(e.target.value)}
-                        />
+
+                        {rightFilename && (
+                            <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded px-3 py-2">
+                                <span className="text-xs text-blue-700 font-medium truncate flex-1">
+                                    {rightFilename}
+                                </span>
+                                <button
+                                    onClick={clearRightFile}
+                                    className="text-blue-600 hover:text-blue-800 transition-colors"
+                                    title="Clear file"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        )}
+
+                        <div
+                            className="relative"
+                            onDragOver={(e) => handleDragOver(e, 'right')}
+                            onDragLeave={(e) => handleDragLeave(e, 'right')}
+                            onDrop={(e) => handleDrop(e, 'right')}
+                        >
+                            <textarea
+                                className="min-h-48 sm:min-h-64 h-48 sm:h-64 w-full resize-y rounded-lg border border-slate-300 bg-white p-3 sm:p-4 font-mono text-xs sm:text-sm leading-relaxed text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                                placeholder="Paste or type your modified text here, or drag & drop a file..."
+                                value={right}
+                                onChange={(e) => setRight(e.target.value)}
+                            />
+                            {isDraggingRight && (
+                                <div className="absolute inset-0 bg-blue-100 bg-opacity-90 border-2 border-dashed border-blue-400 rounded-lg flex items-center justify-center pointer-events-none">
+                                    <div className="text-blue-600 font-semibold text-lg">Drop file here</div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
