@@ -334,7 +334,7 @@ export default function DiffChecker() {
             <div className="w-full max-w-none mx-auto flex flex-col gap-4 sm:gap-6">
                 {/* Action Buttons */}
                 <div className="flex justify-center items-center gap-3 flex-wrap">
-                    <label className="cursor-pointer bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-md">
+                    <label className="cursor-pointer bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm">
                         <Files className="w-4 h-4" />
                         Compare Two Files
                         <input
@@ -349,7 +349,7 @@ export default function DiffChecker() {
                     <button
                         onClick={generateShareLink}
                         disabled={!left && !right}
-                        className="bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-md"
+                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm"
                         title="Copy shareable link to clipboard"
                     >
                         {showCopySuccess ? (
