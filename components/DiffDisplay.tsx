@@ -35,6 +35,7 @@ export default function DiffDisplay({ mode, sideBySideRows, inlineParts, classNa
                     <div className="font-semibold text-slate-800 pb-2 border-b border-slate-200 lg:hidden">Modified</div>
                     <div className="font-semibold text-slate-800 pb-2 border-b border-slate-200 hidden lg:block">Modified</div>
                     {sideBySideRows?.map((row, idx) => {
+                        const isChanged = row.changeType !== "unchanged";
                         const leftClasses =
                             row.changeType === "removed"
                                 ? "bg-red-50 border-l-4 border-red-400 text-red-800"
@@ -53,7 +54,10 @@ export default function DiffDisplay({ mode, sideBySideRows, inlineParts, classNa
                                         : "text-slate-700";
                         return (
                             <React.Fragment key={idx}>
-                                <div className={`flex gap-2 sm:gap-3 items-start font-mono px-2 -mb-2 rounded-md ${leftClasses}`}>
+                                <div
+                                    className={`flex gap-2 sm:gap-3 items-start font-mono px-2 -mb-2 rounded-md ${leftClasses}`}
+                                    {...(isChanged ? { "data-diff-change": row.changeType, "data-diff-row-idx": idx } : {})}
+                                >
                                     <span className="select-none w-8 text-right pr-2 text-slate-500 font-medium text-xs leading-none flex-shrink-0">{row.leftLineNumber ?? ""}</span>
                                     <span className="flex-1 leading-none text-xs break-words whitespace-pre-wrap">{row.leftText ?? ""}</span>
                                 </div>
