@@ -3,6 +3,7 @@
 import React from "react";
 import DiffDisplay from "@/components/DiffDisplay";
 import DiffMinimap from "@/components/DiffMinimap";
+import DiffNavigation from "@/components/DiffNavigation";
 import { buildSideBySideFromLineDiff, computeLineDiff, computeWordDiff, calculateDiffStats } from "@/lib/diffUtils";
 import { ArrowUp, ArrowLeftRight, Wand2, Files, X, Share2, Check } from "lucide-react";
 import { detectLanguage, formatCode, getLanguageDisplayName, getSupportedLanguages, type Language } from "@/lib/formatUtils";
@@ -565,6 +566,14 @@ export default function DiffChecker() {
             {/* Minimap */}
             {mode === "side-by-side" && sbsRows.length > 0 && (
                 <DiffMinimap sideBySideRows={sbsRows} containerRef={diffContainerRef} />
+            )}
+
+            {/* Change Navigation */}
+            {mode === "side-by-side" && sbsRows.length > 0 && (
+                <DiffNavigation
+                    containerRef={diffContainerRef}
+                    totalChanges={diffStats.additions + diffStats.deletions + diffStats.modifications}
+                />
             )}
 
             {/* Scroll to Top Button */}
