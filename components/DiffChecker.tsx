@@ -154,14 +154,20 @@ export default function DiffChecker() {
                 </div>
             </div>
 
-            {/* Minimap */}
-            {mode === "side-by-side" && sbsRows.length > 0 && (
-                <DiffMinimap sideBySideRows={sbsRows} containerRef={diffContainerRef} />
+            {/* Minimap — key={mode} forces remount on view switch */}
+            {(mode === "side-by-side" ? sbsRows.length > 0 : inlineParts.length > 0) && (
+                <DiffMinimap
+                    key={`minimap-${mode}`}
+                    sideBySideRows={mode === "side-by-side" ? sbsRows : undefined}
+                    inlineParts={mode === "inline" ? inlineParts : undefined}
+                    containerRef={diffContainerRef}
+                />
             )}
 
-            {/* Change Navigation */}
-            {mode === "side-by-side" && sbsRows.length > 0 && (
+            {/* Change Navigation — key={mode} forces hunk rebuild from fresh DOM */}
+            {diffStats.additions + diffStats.deletions + diffStats.modifications > 0 && (
                 <DiffNavigation
+                    key={`nav-${mode}`}
                     containerRef={diffContainerRef}
                     totalChanges={diffStats.additions + diffStats.deletions + diffStats.modifications}
                 />

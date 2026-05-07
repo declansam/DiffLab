@@ -1,17 +1,78 @@
 "use client";
 
 import React from "react";
-import type { SideBySideRow } from "@/lib/diffUtils";
+import type { DiffPart, SideBySideRow } from "@/lib/diffUtils";
+
+/** A simplified change indicator for minimap rendering. */
+interface MinimapEntry {
+    changeType: "unchanged" | "added" | "removed" | "modified";
+}
+
+/**
+ * Convert inline diff parts into line-based minimap entries.
+ * Mirrors the logic in DiffDisplay's buildInlineLines.
+ */
+function buildMinimapFromInline(parts: DiffPart[]): MinimapEntry[] {
+    const entries: MinimapEntry[] = [];
+    let lineHasAdded = false;
+    let lineHasRemoved = false;
+
+    const flushLine = () => {
+        let changeType: MinimapEntry["changeType"] = "unchanged";
+        if (lineHasAdded && lineHasRemoved) changeType = "modified";
+        else if (lineHasAdded) changeType = "added";
+        else if (lineHasRemoved) changeType = "removed";
+        entries.push({ changeType });
+        lineHasAdded = false;
+        lineHasRemoved = false;
+    };
+
+    for (const part of parts) {
+        const isAdded = !!part.added;
+        const isRemoved = !!part.removed;
+        if (isAdded) lineHasAdded = true;
+        if (isRemoved) lineHasRemoved = true;
+
+        const subLines = part.value.split("\n");
+        for (let i = 0; i < subLines.length; i++) {
+            if (i > 0) {
+                flushLine();
+                if (isAdded) lineHasAdded = true;
+                if (isRemoved) lineHasRemoved = true;
+            }
+        }
+    }
+
+    // Flush remaining
+    flushLine();
+
+    return entries;
+}
+
+function buildMinimapFromSbs(rows: SideBySideRow[]): MinimapEntry[] {
+    return rows.map((row) => ({ changeType: row.changeType }));
+}
 
 export type DiffMinimapProps = {
     sideBySideRows?: SideBySideRow[];
+    inlineParts?: DiffPart[];
     containerRef: React.RefObject<HTMLDivElement | null>;
 };
 
-export default function DiffMinimap({ sideBySideRows, containerRef }: DiffMinimapProps) {
+export default function DiffMinimap({ sideBySideRows, inlineParts, containerRef }: DiffMinimapProps) {
     const minimapRef = React.useRef<HTMLDivElement>(null);
     const [viewportPosition, setViewportPosition] = React.useState(0);
     const [viewportHeight, setViewportHeight] = React.useState(0);
+
+    const entries = React.useMemo(() => {
+        if (sideBySideRows && sideBySideRows.length > 0) {
+            return buildMinimapFromSbs(sideBySideRows);
+        }
+        if (inlineParts && inlineParts.length > 0) {
+            return buildMinimapFromInline(inlineParts);
+        }
+        return [];
+    }, [sideBySideRows, inlineParts]);
 
     // Update viewport position and height on scroll
     React.useEffect(() => {
@@ -61,9 +122,19 @@ export default function DiffMinimap({ sideBySideRows, containerRef }: DiffMinima
         window.scrollTo({ top: targetScroll, behavior: "smooth" });
     };
 
-    if (!sideBySideRows || sideBySideRows.length === 0) {
-        return null;
-    }
+    if (entries.length === 0) return null;
+
+    const colorMap: Record<string, string> = {
+        added: "bg-green-500/70 hover:bg-green-500",
+        removed: "bg-red-500/70 hover:bg-red-500",
+        modified: "bg-blue-500/70 hover:bg-blue-500",
+    };
+
+    const titleMap: Record<string, string> = {
+        added: "Addition",
+        removed: "Deletion",
+        modified: "Modification",
+    };
 
     return (
         <div
@@ -72,20 +143,12 @@ export default function DiffMinimap({ sideBySideRows, containerRef }: DiffMinima
             onClick={handleMinimapClick}
         >
             {/* Render change indicators */}
-            {sideBySideRows.map((row, idx) => {
-                const positionPercent = (idx / sideBySideRows.length) * 100;
-                const heightPercent = (1 / sideBySideRows.length) * 100;
+            {entries.map((entry, idx) => {
+                if (entry.changeType === "unchanged") return null;
 
-                let colorClass = "";
-                if (row.changeType === "added") {
-                    colorClass = "bg-green-500/70 hover:bg-green-500";
-                } else if (row.changeType === "removed") {
-                    colorClass = "bg-red-500/70 hover:bg-red-500";
-                } else if (row.changeType === "modified") {
-                    colorClass = "bg-blue-500/70 hover:bg-blue-500";
-                } else {
-                    return null; // Don't render unchanged lines
-                }
+                const positionPercent = (idx / entries.length) * 100;
+                const heightPercent = (1 / entries.length) * 100;
+                const colorClass = colorMap[entry.changeType] || "";
 
                 return (
                     <div
@@ -95,13 +158,7 @@ export default function DiffMinimap({ sideBySideRows, containerRef }: DiffMinima
                             top: `${positionPercent}%`,
                             height: `${Math.max(heightPercent, 0.5)}%`,
                         }}
-                        title={
-                            row.changeType === "added"
-                                ? "Addition"
-                                : row.changeType === "removed"
-                                    ? "Deletion"
-                                    : "Modification"
-                        }
+                        title={titleMap[entry.changeType] || ""}
                     />
                 );
             })}
