@@ -3,20 +3,55 @@
 import React from "react";
 import type { DiffPart, SideBySideRow } from "@/lib/diffUtils";
 
-type InlinePart = {
-    text: string;
-    status: "added" | "removed" | "unchanged";
-};
+/** A single line in the inline view, composed of styled segments. */
+interface InlineLine {
+    lineNumber: number;
+    segments: { text: string; status: "added" | "removed" | "unchanged" }[];
+    hasChange: boolean;
+}
 
-function renderInline(parts: DiffPart[]): InlinePart[] {
-    const rendered: InlinePart[] = [];
-    for (const p of parts) {
-        const status: InlinePart["status"] = p.added ? "added" : p.removed ? "removed" : "unchanged";
-        const value = p.value;
-        if (value.length === 0) continue;
-        rendered.push({ text: value, status });
+/**
+ * Convert word-level diff parts into line-based structure so we can
+ * add data-diff-change attributes and support navigation/minimap.
+ */
+function buildInlineLines(parts: DiffPart[]): InlineLine[] {
+    const lines: InlineLine[] = [];
+    let currentLine: InlineLine["segments"] = [];
+    let lineNum = 1;
+    let lineHasChange = false;
+
+    const flushLine = () => {
+        lines.push({ lineNumber: lineNum, segments: currentLine, hasChange: lineHasChange });
+        lineNum++;
+        currentLine = [];
+        lineHasChange = false;
+    };
+
+    for (const part of parts) {
+        const status: "added" | "removed" | "unchanged" = part.added ? "added" : part.removed ? "removed" : "unchanged";
+        if (status !== "unchanged") lineHasChange = true;
+
+        const text = part.value;
+        const subLines = text.split("\n");
+
+        for (let i = 0; i < subLines.length; i++) {
+            if (i > 0) {
+                // A newline boundary — flush the current line
+                flushLine();
+                if (status !== "unchanged") lineHasChange = true;
+            }
+            if (subLines[i].length > 0) {
+                currentLine.push({ text: subLines[i], status });
+            }
+        }
     }
-    return rendered;
+
+    // Flush any remaining content
+    if (currentLine.length > 0) {
+        flushLine();
+    }
+
+    return lines;
 }
 
 export type DiffDisplayProps = {
@@ -73,27 +108,39 @@ export default function DiffDisplay({ mode, sideBySideRows, inlineParts, classNa
         );
     }
 
-    // inline
-    const inline = renderInline(inlineParts ?? []);
+    // Inline view — line-based with data attributes for navigation
+    const inlineLines = buildInlineLines(inlineParts ?? []);
+
+    const statusClasses = {
+        added: "text-green-800 bg-green-100 px-1 py-px rounded font-medium",
+        removed: "text-red-800 bg-red-100 px-1 py-px rounded line-through font-medium",
+        unchanged: "text-slate-800",
+    };
+
     return (
         <div className={className}>
-            <div className="font-mono text-xs sm:text-sm leading-tight text-slate-800 p-2 sm:p-3 whitespace-pre-wrap">
-                {inline.map((p, i) => {
-                    const cls =
-                        p.status === "added"
-                            ? "text-green-800 bg-green-100 px-1 py-px rounded font-medium inline-block"
-                            : p.status === "removed"
-                                ? "text-red-800 bg-red-100 px-1 py-px rounded line-through font-medium inline-block"
-                                : "text-slate-800";
-                    return (
-                        <span key={i} className={cls}>
-                            {p.text}
+            <div className="font-mono text-xs sm:text-sm leading-relaxed text-slate-800">
+                {inlineLines.map((line, idx) => (
+                    <div
+                        key={idx}
+                        className={`flex items-start gap-2 px-2 py-0.5 rounded-sm ${
+                            line.hasChange ? "bg-amber-50/60" : ""
+                        }`}
+                        {...(line.hasChange ? { "data-diff-change": "modified", "data-diff-row-idx": idx } : {})}
+                    >
+                        <span className="select-none w-8 text-right pr-2 text-slate-400 font-medium text-xs leading-relaxed flex-shrink-0">
+                            {line.lineNumber}
                         </span>
-                    );
-                })}
+                        <span className="flex-1 whitespace-pre-wrap break-words">
+                            {line.segments.map((seg, i) => (
+                                <span key={i} className={statusClasses[seg.status]}>
+                                    {seg.text}
+                                </span>
+                            ))}
+                        </span>
+                    </div>
+                ))}
             </div>
         </div>
     );
 }
-
-
