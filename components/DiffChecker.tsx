@@ -6,7 +6,7 @@ import DiffMinimap from "@/components/DiffMinimap";
 import DiffNavigation from "@/components/DiffNavigation";
 import { buildSideBySideFromLineDiff, computeLineDiff, computeWordDiff, calculateDiffStats } from "@/lib/diffUtils";
 import { ArrowUp, ArrowLeftRight, Wand2, Files, X, Share2, Check } from "lucide-react";
-import { detectLanguage, formatCode, getLanguageDisplayName, getSupportedLanguages, type Language } from "@/lib/formatUtils";
+import { detectLanguage, detectLanguageFromFilename, formatCode, getLanguageDisplayName, getSupportedLanguages, type Language } from "@/lib/formatUtils";
 import LZString from "lz-string";
 
 type Mode = "side-by-side" | "inline";
@@ -97,12 +97,19 @@ export default function DiffChecker() {
         window.scrollTo({ top: 0, behavior: "smooth" });
     }, []);
 
-    const handleFileUpload = React.useCallback((file: File, setter: (value: string) => void, filenameSetter: (value: string) => void) => {
+    const handleFileUpload = React.useCallback((file: File, setter: (value: string) => void, filenameSetter: (value: string) => void, detectedLangSetter?: (value: Language) => void) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             const content = e.target?.result as string;
             setter(content);
             filenameSetter(file.name);
+            // Use file extension for reliable language detection
+            if (detectedLangSetter) {
+                const langFromExt = detectLanguageFromFilename(file.name);
+                if (langFromExt) {
+                    detectedLangSetter(langFromExt);
+                }
+            }
         };
         reader.onerror = () => {
             alert(`Failed to read file: ${file.name}`);
@@ -143,9 +150,9 @@ export default function DiffChecker() {
         if (files.length > 0) {
             const file = files[0];
             if (side === 'left') {
-                handleFileUpload(file, setLeft, setLeftFilename);
+                handleFileUpload(file, setLeft, setLeftFilename, setDetectedLeftLang);
             } else {
-                handleFileUpload(file, setRight, setRightFilename);
+                handleFileUpload(file, setRight, setRightFilename, setDetectedRightLang);
             }
         }
     }, [handleFileUpload]);
@@ -153,10 +160,10 @@ export default function DiffChecker() {
     const handleCompareTwoFiles = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (files && files.length >= 2) {
-            handleFileUpload(files[0], setLeft, setLeftFilename);
-            handleFileUpload(files[1], setRight, setRightFilename);
+            handleFileUpload(files[0], setLeft, setLeftFilename, setDetectedLeftLang);
+            handleFileUpload(files[1], setRight, setRightFilename, setDetectedRightLang);
         } else if (files && files.length === 1) {
-            handleFileUpload(files[0], setLeft, setLeftFilename);
+            handleFileUpload(files[0], setLeft, setLeftFilename, setDetectedLeftLang);
         }
     }, [handleFileUpload]);
 
@@ -408,7 +415,7 @@ export default function DiffChecker() {
                                         onChange={(e) => {
                                             const file = e.target.files?.[0];
                                             if (file) {
-                                                handleFileUpload(file, setLeft, setLeftFilename);
+                                                handleFileUpload(file, setLeft, setLeftFilename, setDetectedLeftLang);
                                             }
                                         }}
                                     />
@@ -510,7 +517,7 @@ export default function DiffChecker() {
                                         onChange={(e) => {
                                             const file = e.target.files?.[0];
                                             if (file) {
-                                                handleFileUpload(file, setRight, setRightFilename);
+                                                handleFileUpload(file, setRight, setRightFilename, setDetectedRightLang);
                                             }
                                         }}
                                     />
