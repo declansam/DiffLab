@@ -9,6 +9,8 @@ import ActionBar from "@/components/ActionBar";
 import { NavbarControls } from "@/hooks/useNavbarControls";
 import { useTextPanel } from "@/hooks/useTextPanel";
 import { useShareLink } from "@/hooks/useShareLink";
+import { useHorizontalSplit } from "@/hooks/useHorizontalSplit";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { buildSideBySideFromLineDiff, computeLineDiff, computeWordDiff, calculateDiffStats } from "@/lib/diffUtils";
 import { ArrowUp, ArrowLeftRight } from "lucide-react";
 
@@ -25,6 +27,12 @@ export default function DiffChecker() {
     const [ignoreCase, setIgnoreCase] = React.useState(false);
     const [showScrollTop, setShowScrollTop] = React.useState(false);
     const diffContainerRef = React.useRef<HTMLDivElement>(null);
+    const panelsGridRef = React.useRef<HTMLDivElement>(null);
+
+    // --- Draggable horizontal split — input panels and diff output resize independently ---
+    const isDesktop = useMediaQuery("(min-width: 1024px)");
+    const { ratio: panelsSplitRatio, startDragging: startDraggingPanels, resetRatio: resetPanelsSplitRatio } = useHorizontalSplit(0.5);
+    const { ratio: diffSplitRatio, startDragging: startDraggingDiff, resetRatio: resetDiffSplitRatio } = useHorizontalSplit(0.5);
 
     // --- Share link ---
     const { showCopySuccess, generateShareLink } = useShareLink({
@@ -111,7 +119,11 @@ export default function DiffChecker() {
                 />
 
                 {/* Text Panels */}
-                <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                <div
+                    ref={panelsGridRef}
+                    className="relative grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6"
+                    style={isDesktop ? { gridTemplateColumns: `${panelsSplitRatio}fr ${1 - panelsSplitRatio}fr` } : undefined}
+                >
                     <TextPanel
                         label="Original Text"
                         placeholder="Paste or type your original text here, or drag & drop a file..."
@@ -121,8 +133,28 @@ export default function DiffChecker() {
                         ]}
                     />
 
+                    {/* Drag handle to resize the split (desktop only) */}
+                    {isDesktop && (
+                        <div
+                            className="group absolute inset-y-0 w-3 -ml-1.5 cursor-col-resize z-[5]"
+                            style={{ left: `${panelsSplitRatio * 100}%` }}
+                            onMouseDown={startDraggingPanels(panelsGridRef)}
+                            onTouchStart={startDraggingPanels(panelsGridRef)}
+                            onDoubleClick={resetPanelsSplitRatio}
+                            role="separator"
+                            aria-orientation="vertical"
+                            aria-label="Resize comparison panels"
+                            title="Drag to resize • double-click to reset"
+                        >
+                            <div className="mx-auto h-full w-px bg-slate-300 group-hover:bg-blue-400 group-hover:w-0.5 transition-colors" />
+                        </div>
+                    )}
+
                     {/* Swap Button */}
-                    <div className="flex lg:absolute lg:left-1/2 lg:top-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 lg:z-10 justify-center lg:justify-start">
+                    <div
+                        className="flex lg:absolute lg:top-1/2 lg:-translate-y-1/2 lg:z-10 justify-center lg:justify-start"
+                        style={isDesktop ? { left: `${panelsSplitRatio * 100}%`, transform: "translate(-50%, -50%)" } : undefined}
+                    >
                         <button
                             onClick={swapTexts}
                             className="bg-slate-600 hover:bg-slate-700 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2"
@@ -147,7 +179,15 @@ export default function DiffChecker() {
                 {/* Diff Display */}
                 <div className="mt-4" ref={diffContainerRef}>
                     {mode === "side-by-side" ? (
-                        <DiffDisplay mode="side-by-side" sideBySideRows={sbsRows} className="border border-slate-300 rounded-lg p-2 sm:p-4 bg-white shadow-sm overflow-x-auto" />
+                        <DiffDisplay
+                            mode="side-by-side"
+                            sideBySideRows={sbsRows}
+                            className="border border-slate-300 rounded-lg p-2 sm:p-4 bg-white shadow-sm overflow-x-auto"
+                            splitRatio={diffSplitRatio}
+                            isDesktop={isDesktop}
+                            startDragging={startDraggingDiff}
+                            resetSplitRatio={resetDiffSplitRatio}
+                        />
                     ) : (
                         <DiffDisplay mode="inline" inlineParts={inlineParts} className="border border-slate-300 rounded-lg p-2 sm:p-4 bg-white shadow-sm" />
                     )}

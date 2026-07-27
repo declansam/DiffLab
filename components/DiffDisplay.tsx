@@ -59,13 +59,33 @@ export type DiffDisplayProps = {
     sideBySideRows?: SideBySideRow[];
     inlineParts?: DiffPart[];
     className?: string;
+    splitRatio?: number;
+    isDesktop?: boolean;
+    startDragging?: (containerRef: React.RefObject<HTMLElement | null>) => (e: React.MouseEvent | React.TouchEvent) => void;
+    resetSplitRatio?: () => void;
 };
 
-export default function DiffDisplay({ mode, sideBySideRows, inlineParts, className }: DiffDisplayProps) {
+export default function DiffDisplay({
+    mode,
+    sideBySideRows,
+    inlineParts,
+    className,
+    splitRatio,
+    isDesktop,
+    startDragging,
+    resetSplitRatio,
+}: DiffDisplayProps) {
+    const gridRef = React.useRef<HTMLDivElement>(null);
+    const showDivider = isDesktop && splitRatio !== undefined && startDragging;
+
     if (mode === "side-by-side") {
         return (
             <div className={className}>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-6 w-full text-xs">
+                <div
+                    ref={gridRef}
+                    className="relative grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-6 w-full text-xs"
+                    style={isDesktop && splitRatio !== undefined ? { gridTemplateColumns: `${splitRatio}fr ${1 - splitRatio}fr` } : undefined}
+                >
                     <div className="font-semibold text-slate-800 pb-2 border-b border-slate-200">Original</div>
                     <div className="font-semibold text-slate-800 pb-2 border-b border-slate-200 lg:hidden">Modified</div>
                     <div className="font-semibold text-slate-800 pb-2 border-b border-slate-200 hidden lg:block">Modified</div>
@@ -103,6 +123,23 @@ export default function DiffDisplay({ mode, sideBySideRows, inlineParts, classNa
                             </React.Fragment>
                         );
                     })}
+
+                    {/* Drag handle to resize the split (desktop only) */}
+                    {showDivider && (
+                        <div
+                            className="group absolute inset-y-0 w-3 -ml-1.5 cursor-col-resize z-[5]"
+                            style={{ left: `${splitRatio! * 100}%` }}
+                            onMouseDown={startDragging!(gridRef)}
+                            onTouchStart={startDragging!(gridRef)}
+                            onDoubleClick={resetSplitRatio}
+                            role="separator"
+                            aria-orientation="vertical"
+                            aria-label="Resize diff columns"
+                            title="Drag to resize • double-click to reset"
+                        >
+                            <div className="mx-auto h-full w-px bg-slate-300 group-hover:bg-blue-400 group-hover:w-0.5 transition-colors" />
+                        </div>
+                    )}
                 </div>
             </div>
         );
