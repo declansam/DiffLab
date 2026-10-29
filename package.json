@@ -39,5 +39,9 @@
     "postcss": "^8.5.13",
     "sharp": "^0.35.3",
     "brace-expansion": "^5.0.8"
+  },
+  "allowScripts": {
+    "@tailwindcss/oxide@4.1.13": true,
+    "unrs-resolver@1.11.1": true
   }
 }
